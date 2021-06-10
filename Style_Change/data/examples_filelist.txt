@@ -1,1 +1,1 @@
-/home/chelvan/Videos/Text-to-speech-style-change/Style_Change/data/audio.wav|The Donkey he came to a kingdom where he heard there was an old king with a wonderfully beautiful daughter.|0
+AudioClips_Netural/audio_7.wav|The king made sure that the donkey was served with the very best food and drink|0
