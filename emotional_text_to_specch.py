@@ -1,0 +1,87 @@
+import sys
+
+sys.path.append('Melspectrogram_To_Audio/')
+import numpy as np
+from scipy.io.wavfile import write
+import librosa
+import torch
+
+from Style_Change.hparams import create_hparams
+from Style_Change.model import load_model
+from Style_Change.layers import TacotronSTFT
+from Style_Change.data_utils import TextMelLoader, TextMelCollate
+from Style_Change.text import cmudict, text_to_sequence
+from Melspectrogram_To_Audio.denoiser import Denoiser
+
+
+def panner(signal, angle):
+    angle = np.radians(angle)
+    left = np.sqrt(2) / 2.0 * (np.cos(angle) - np.sin(angle)) * signal
+    right = np.sqrt(2) / 2.0 * (np.cos(angle) + np.sin(angle)) * signal
+    return np.dstack((left, right))[0]
+
+
+def load_mel(path):
+    audio, sampling_rate = librosa.core.load(path, sr=hparams.sampling_rate)
+    audio = torch.from_numpy(audio)
+    if sampling_rate != hparams.sampling_rate:
+        raise ValueError("{} SR doesn't match target {} SR".format(
+            sampling_rate, stft.sampling_rate))
+    audio_norm = audio.unsqueeze(0)
+    audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
+    melspec = stft.mel_spectrogram(audio_norm)
+    melspec = melspec.cuda()
+    return melspec
+
+
+hparams = create_hparams()
+
+stft = TacotronSTFT(hparams.filter_length, hparams.hop_length, hparams.win_length,
+                    hparams.n_mel_channels, hparams.sampling_rate, hparams.mel_fmin,
+                    hparams.mel_fmax)
+
+checkpoint_path = "./Style_Change/weight/checkpoint_18000"
+mellotron = load_model(hparams).cuda().eval()
+mellotron.load_state_dict(torch.load(checkpoint_path)['state_dict'])
+
+waveglow_path = "./Melspectrogram_To_Audio/weight/waveglow_256channels_universal_v5.pt"
+waveglow = torch.load(waveglow_path)['model'].cuda().eval()
+denoiser = Denoiser(waveglow).cuda().eval()
+
+
+
+arpabet_dict = cmudict.CMUDict('./Style_Change/data/cmu_dictionary')
+audio_paths = './Style_Change/data/examples_filelist.txt'
+dataloader = TextMelLoader(audio_paths, hparams)
+datacollate = TextMelCollate(1)
+
+file_idx = 0
+audio_path, text, sid = dataloader.audiopaths_and_text[file_idx]
+print('info ', audio_path, text, sid)
+
+# get audio path, encoded text, pitch contour and mel for gst
+text_encoded = torch.LongTensor(text_to_sequence(text, hparams.text_cleaners, arpabet_dict))[None, :].cuda()
+pitch_contour = dataloader[file_idx][3][None].cuda()
+mel = load_mel(audio_path)
+
+# load source data to obtain rhythm using tacotron 2 as a forced aligner
+x, y = mellotron.parse_batch(datacollate([dataloader[file_idx]]))
+
+with torch.no_grad():
+    # get rhythm (alignment map) using tacotron 2
+    mel_outputs, mel_outputs_postnet, gate_outputs, rhythm = mellotron.forward(x)
+    rhythm = rhythm.permute(1, 0, 2)
+
+for speeker_id_of in range(0, 4):
+    speaker_id = torch.LongTensor([speeker_id_of]).cuda()
+
+    with torch.no_grad():
+        mel_outputs, mel_outputs_postnet, gate_outputs, _ = mellotron.inference_noattention(
+            (text_encoded, mel, speaker_id, pitch_contour, rhythm))
+
+    with torch.no_grad():
+        audio = waveglow.infer(mel_outputs_postnet, sigma=0.666).float()
+
+    audio = audio.cpu().numpy()[0]
+    audio = audio / np.abs(audio).max()
+    write('audio_' + str(speeker_id_of) + '.wav', hparams.sampling_rate, audio)
