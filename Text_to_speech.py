@@ -2,12 +2,11 @@ import sys
 import numpy as np
 import pandas as pd
 import torch
-import librosa
 from scipy.io.wavfile import write
 
 from Text_To_Melspectrogram.hparams import create_hparams
-from Text_To_Melspectrogram.text import text_to_sequence
 from Text_To_Melspectrogram.model import Tacotron2
+from Text_To_Melspectrogram.text import text_to_sequence
 
 sys.path.append('Melspectrogram_To_Audio/')
 from denoiser import Denoiser
