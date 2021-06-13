@@ -1,3 +1,5 @@
+import os
+import shutil
 import sys
 
 sys.path.append('Melspectrogram_To_Audio/')
@@ -6,6 +8,7 @@ import pandas as pd
 import torch
 import librosa
 from scipy.io.wavfile import write
+from pydub import AudioSegment
 
 from Style_Change.model import load_model
 from Style_Change.layers import TacotronSTFT
@@ -95,8 +98,13 @@ def melToAudio(mel):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('story.csv')
+    if not os.path.isdir('./AudioClips_Emotion/'):
+        os.mkdir('./AudioClips_Emotion/')
+    else:
+        shutil.rmtree('./AudioClips_Emotion/')
+        os.mkdir('./AudioClips_Emotion/')
 
+    df = pd.read_csv('story.csv')
     emotions = list(df['Emotion'])
 
     for count, value in enumerate(list(df['Sentence'])):
@@ -109,3 +117,26 @@ if __name__ == '__main__':
         mel = styleChange(emotions[count])
         audio = melToAudio(mel)
         write(f'./AudioClips_Emotion/audio_{count}.wav', hparams.sampling_rate, audio)
+
+    path = []
+    for i in os.listdir('./AudioClips_Emotion'):
+        path.append(i.split("_")[1].split(".")[0])
+
+    list1 = [int(x) for x in path]
+    list1.sort()
+
+    path_list = []
+    for i in list1:
+        path_list.append(f"./AudioClips_Emotion/audio_{i}.wav")
+
+    print(path_list)
+
+    one_sec_segment = AudioSegment.silent(duration=1500)  # duration in milliseconds
+    one_sec_segment.export('./AudioClips_Emotion/interval.wav', format="wav")
+
+    sound = AudioSegment.from_wav("./AudioClips_Emotion/interval.wav")
+
+    for i in path_list:
+        sound = sound + AudioSegment.from_wav(i) + AudioSegment.from_wav("./AudioClips_Emotion/interval.wav")
+
+    sound.export("Audio_Emotion.wav", format="wav")

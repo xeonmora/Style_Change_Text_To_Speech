@@ -1,8 +1,11 @@
+import os
+import shutil
 import sys
 import numpy as np
 import pandas as pd
 import torch
 from scipy.io.wavfile import write
+from pydub import AudioSegment
 
 from Text_To_Melspectrogram.hparams import create_hparams
 from Text_To_Melspectrogram.model import Tacotron2
@@ -51,6 +54,12 @@ def melToAudio(mel):
 
 
 if __name__ == '__main__':
+    if not os.path.isdir('./AudioClips_Netural/'):
+        os.mkdir('./AudioClips_Netural/')
+    else:
+        shutil.rmtree('./AudioClips_Netural/')
+        os.mkdir('./AudioClips_Netural/')
+
     df = pd.read_csv('story.csv')
 
     for count, value in enumerate(list(df['Sentence'])):
@@ -58,3 +67,26 @@ if __name__ == '__main__':
         mel = textToMel(value)
         audio = melToAudio(mel)
         write(f'./AudioClips_Netural/audio_{count}.wav', hparams.sampling_rate, audio)
+
+    path = []
+    for i in os.listdir('./AudioClips_Netural'):
+        path.append(i.split("_")[1].split(".")[0])
+
+    list1 = [int(x) for x in path]
+    list1.sort()
+
+    path_list = []
+    for i in list1:
+        path_list.append(f"./AudioClips_Netural/audio_{i}.wav")
+
+    print(path_list)
+
+    one_sec_segment = AudioSegment.silent(duration=1500)  # duration in milliseconds
+    one_sec_segment.export('./AudioClips_Netural/interval.wav', format="wav")
+
+    sound = AudioSegment.from_wav("./AudioClips_Netural/interval.wav")
+
+    for i in path_list:
+        sound = sound + AudioSegment.from_wav(i) + AudioSegment.from_wav("./AudioClips_Netural/interval.wav")
+
+    sound.export("Audio.wav", format="wav")
