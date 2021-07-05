@@ -1,9 +1,9 @@
-Sentence,Emotion
-The Donkey he came to a kingdom where he heard there was an old king with a wonderfully beautiful daughter.,0
-"The donkey thought he would love to see the princess. He trotted up to the castle,",0
-"sat outside the gate, took out his lute and began playing a marvellous tune.",1
-"The king and the court were in the great hall having dinner,",2
-"and when news reached them that a donkey sat outside the gate,",1
-playing the lute beautifully the king was extremely curious He ordered,3
-that the donkey be brought in to dine with them at once and for him to be seated right next him at the highest table.,3
-The king made sure that the donkey was served with the very best food and drink,1
+Audio_path,Sentence,Emotion,Encoded-emotion,Score
+Audio_0.wav,The Donkey he came to a kingdom where he heard there was an old king with a wonderfully beautiful daughter.,0,Anger,
+Audio_1.wav,"The donkey thought he would love to see the princess. He trotted up to the castle,",0,Anger,
+Audio_2.wav,"sat outside the gate, took out his lute and began playing a marvellous tune.",1,Fear,
+Audio_3.wav,"The king and the court were in the great hall having dinner,",2,Sad,
+Audio_4.wav,"and when news reached them that a donkey sat outside the gate,",1,Fear,
+Audio_5.wav,playing the lute beautifully the king was extremely curious He ordered,3,Happy,
+Audio_6.wav,that the donkey be brought in to dine with them at once and for him to be seated right next him at the highest table.,3,Happy,
+Audio_7.wav,The king made sure that the donkey was served with the very best food and drink,1,Fear,

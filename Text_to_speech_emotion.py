@@ -44,7 +44,7 @@ stft = TacotronSTFT(hparams.filter_length, hparams.hop_length, hparams.win_lengt
                     hparams.n_mel_channels, hparams.sampling_rate, hparams.mel_fmin,
                     hparams.mel_fmax)
 
-checkpoint_path = "Style_Change/weight/checkpoint_37000"
+checkpoint_path = "Style_Change/weight/checkpoint_17000"
 mellotron = load_model(hparams).cuda().eval()
 mellotron.load_state_dict(torch.load(checkpoint_path)['state_dict'])
 

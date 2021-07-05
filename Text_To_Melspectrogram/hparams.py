@@ -3,7 +3,6 @@ from Text_To_Melspectrogram.text import symbols
 
 
 def create_hparams(hparams_string=None, verbose=False):
-    """Create model hyperparameters. Parse nondefault from given string."""
 
     hparams = tf.contrib.training.HParams(
         ################################
